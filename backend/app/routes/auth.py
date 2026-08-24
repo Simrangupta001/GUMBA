@@ -97,14 +97,27 @@ def login(
 ):
     email = form_data.username
     password = form_data.password
+    db_user = db.query(User).filter(
+        User.email == email
+    ).first()
 
-    db_user = db.query(User).filter(User.email == email).first()
+    if not  db_user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
 
-    if not db_user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if not verify_password(password,  db_user.password):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
 
-    if not verify_password(password, db_user.password):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if not  db_user.is_active:
+        raise HTTPException(
+            status_code=403,
+            detail="Your account is inactive. Please contact the administrator."
+        )
 
     token = create_access_token(db_user.id)
 
