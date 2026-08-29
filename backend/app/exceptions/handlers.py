@@ -97,6 +97,8 @@ def jwt_exception_handler(
     )
 
 
+
+
 def general_exception_handler(
     request: Request,
     exc: Exception,
@@ -109,3 +111,4 @@ def general_exception_handler(
             "errors": None,
         },
     )
+

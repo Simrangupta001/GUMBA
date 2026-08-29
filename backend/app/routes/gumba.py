@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import admin_required
+from app.core.dependencies import agent_required
 from app.models.user import User
 
 from app.schemas.gumba import (
@@ -13,6 +13,9 @@ from app.schemas.gumba import (
 )
 
 from app.services.gumba_service import GumbaService
+
+
+
 
 
 router = APIRouter(
@@ -28,7 +31,7 @@ router = APIRouter(
 def create_gumba(
     gumba: GumbaCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(admin_required)
+    current_user: User = Depends(agent_required)
 ):
 
     return GumbaService.create_gumba(
@@ -46,6 +49,20 @@ def get_gumbas(
 ):
 
     return GumbaService.get_all_gumbas(db)
+
+
+@router.get(
+    "/my-gumbas",
+    response_model=List[GumbaResponse]
+)
+def get_my_gumbas(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(agent_required)
+):
+    return GumbaService.get_my_gumbas(
+        db,
+        current_user.id
+    )
 
 
 @router.get(

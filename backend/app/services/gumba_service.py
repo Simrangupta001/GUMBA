@@ -14,7 +14,22 @@ class GumbaService:
         db: Session,
         gumba_data: GumbaCreate
     ):
+        # Check whether this Gumba already exists
+        existing_gumba = (
+            db.query(Gumba)
+            .filter(
+                Gumba.name == gumba_data.name,
+                Gumba.address == gumba_data.address,
+                Gumba.district == gumba_data.district
+            )
+            .first()
+        )
 
+        if existing_gumba:
+            raise HTTPException(
+                status_code=409,
+                detail="This Gumba is already registered."
+            )
         # If an agent is provided, verify that
         # the user actually has AGENT role.
         if gumba_data.agent_id is not None:
@@ -90,3 +105,19 @@ class GumbaService:
             )
 
         return gumba
+
+    @staticmethod
+    def get_my_gumbas(
+            db: Session,
+            agent_id: int
+    ):
+        return (
+            db.query(Gumba)
+            .filter(
+                Gumba.agent_id == agent_id,
+                Gumba.is_active == True
+            )
+            .all()
+        )
+
+    

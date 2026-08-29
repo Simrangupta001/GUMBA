@@ -45,3 +45,8 @@ class Gumba(Base, BaseModelMixin):
         "User",
         back_populates="gumbas"
     )
+    
+    donations = relationship(
+        "Donation",
+        back_populates="gumba"
+    )

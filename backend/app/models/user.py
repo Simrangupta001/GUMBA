@@ -14,4 +14,7 @@ class User(Base, BaseModelMixin):
     password = Column(String(255), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     role = relationship("Role")
+    gumbas = relationship("Gumba", back_populates="agent")
+    donations = relationship("Donation", back_populates="agent")
+
 

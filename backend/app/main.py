@@ -22,6 +22,7 @@ from app.routes.user import router as user_router
 from app.routes.super_admin import router as super_admin_router
 from app.middleware.logging import logging_middleware
 from app.routes.gumba import router as gumba_router
+from app.routes.donation import router as donation_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -77,6 +78,7 @@ app.add_exception_handler(
 app.middleware("http")(logging_middleware)
 
 app.include_router(gumba_router)
+app.include_router(donation_router)
 
 
 
