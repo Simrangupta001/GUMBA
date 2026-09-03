@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, ForeignKey, JSON, Float
+from sqlalchemy import Column, String, Text, ForeignKey, JSON, Float, Integer
 from sqlalchemy.orm import relationship
 
 from app.models.base import BaseModelMixin
@@ -19,7 +19,7 @@ class Gumba(Base, BaseModelMixin):
 
     ward_no = Column(String(20), nullable=True)
 
-    contact_phone = Column(String(15), nullable=True)
+    contact_phone = Column(String(20), nullable=True)
 
     contact_email = Column(String(255), nullable=True)
 
@@ -45,8 +45,27 @@ class Gumba(Base, BaseModelMixin):
         "User",
         back_populates="gumbas"
     )
-    
+
     donations = relationship(
         "Donation",
         back_populates="gumba"
     )
+    # app/models/gumba.py
+    media = relationship("GumbaMedia", back_populates="gumba")  # add this line
+    gumba_id = Column(
+        Integer,
+        ForeignKey("gumbas.id"),
+        nullable=False,
+        index=True
+    )
+
+    # gumba = relationship(
+    #     "Gumba",
+    #     back_populates="agent_applications"
+    # )
+
+    user = relationship(
+        "User",
+        back_populates="agent_application"
+    )
+

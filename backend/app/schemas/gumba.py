@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field, EmailStr, ConfigDict, field_validator
 import re
-
+from app.validators.gumba import is_valid_gumba_phone
 
 class GumbaCreate(BaseModel):
 
@@ -73,13 +73,14 @@ class GumbaCreate(BaseModel):
     @field_validator("contact_phone")
     @classmethod
     def validate_phone(cls, value):
-
         if value is None:
             return value
 
-        if not re.fullmatch(r"[0-9]{10,15}", value):
+        value = value.strip()
+
+        if not is_valid_gumba_phone(value):
             raise ValueError(
-                "Phone must contain 10 to 15 digits."
+                "Enter a valid mobile or telephone number."
             )
 
         return value
@@ -102,8 +103,20 @@ class GumbaResponse(BaseModel):
     photos: Optional[list[str]]
     videos: Optional[list[str]]
     agent_id: Optional[int]
+    agent: Optional[GumbaAgentResponse]
     is_active: bool
 
     model_config = ConfigDict(
         from_attributes=True
     )
+
+    class GumbaAgentResponse(BaseModel):
+        id: int
+        full_name: str
+        email: str
+        phone: Optional[str]
+
+        model_config = ConfigDict(
+            from_attributes=True
+        )
+

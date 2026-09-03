@@ -61,3 +61,58 @@ class DonationService:
             .order_by(Donation.id.desc())
             .all()
         )
+
+    @staticmethod
+    def get_agent_donations(
+        db: Session,
+        agent_id: int
+    ):
+        return (
+            db.query(Donation)
+            .join(Gumba, Donation.gumba_id == Gumba.id)
+            .filter(
+                Gumba.agent_id == agent_id,
+                Donation.is_active == True
+            )
+            .order_by(Donation.id.desc())
+            .all()
+        )
+
+    @staticmethod
+    def update_donation_status(
+        db: Session,
+        donation_id: int,
+        agent_id: int,
+        new_status: str
+    ):
+        donation = (
+            db.query(Donation)
+            .join(Gumba, Donation.gumba_id == Gumba.id)
+            .filter(
+                Donation.id == donation_id,
+                Gumba.agent_id == agent_id,
+                Donation.is_active == True
+            )
+            .first()
+        )
+
+        if donation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Donation not found or you are not assigned to this Gumba."
+            )
+
+        if donation.status != "PENDING":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only pending donations can be verified."
+            )
+
+        donation.status = new_status
+
+        db.commit()
+        db.refresh(donation)
+
+        return donation
+
+    

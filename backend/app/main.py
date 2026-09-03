@@ -3,6 +3,7 @@ from app.core.database import Base, engine
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.orm import configure_mappers
 from jose import JWTError
 from app.exceptions.handlers import (
     http_exception_handler,
@@ -22,8 +23,9 @@ from app.routes.user import router as user_router
 from app.routes.super_admin import router as super_admin_router
 from app.middleware.logging import logging_middleware
 from app.routes.gumba import router as gumba_router
+from app.routes.agent_application import router as agent_application_router
 from app.routes.donation import router as donation_router
-
+configure_mappers()
 
 Base.metadata.create_all(bind=engine)
 
@@ -79,6 +81,8 @@ app.middleware("http")(logging_middleware)
 
 app.include_router(gumba_router)
 app.include_router(donation_router)
+
+app.include_router(agent_application_router)
 
 
 

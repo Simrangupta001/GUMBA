@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.gumba import Gumba
 from app.models.role import Role
@@ -74,14 +74,6 @@ class GumbaService:
 
         return gumba
 
-    @staticmethod
-    def get_all_gumbas(db: Session):
-
-        return (
-            db.query(Gumba)
-            .filter(Gumba.is_active == True)
-            .all()
-        )
 
     @staticmethod
     def get_gumba_by_id(
@@ -91,6 +83,7 @@ class GumbaService:
 
         gumba = (
             db.query(Gumba)
+            .options(joinedload(Gumba.agent))
             .filter(
                 Gumba.id == gumba_id,
                 Gumba.is_active == True
@@ -117,6 +110,15 @@ class GumbaService:
                 Gumba.agent_id == agent_id,
                 Gumba.is_active == True
             )
+            .all()
+        )
+
+    @staticmethod
+    def get_all_gumbas(db: Session):
+        return (
+            db.query(Gumba)
+            .options(joinedload(Gumba.agent))
+            .filter(Gumba.is_active == True)
             .all()
         )
 

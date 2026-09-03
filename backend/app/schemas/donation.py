@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional
 
 
@@ -33,3 +33,20 @@ class DonationResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True
     )
+
+class DonationStatusUpdate(BaseModel):
+    status: str = Field(
+        description="Donation status: APPROVED or REJECTED"
+    )
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value):
+        value = value.upper()
+
+        if value not in ["APPROVED", "REJECTED"]:
+            raise ValueError(
+                "Status must be APPROVED or REJECTED."
+            )
+
+        return value
