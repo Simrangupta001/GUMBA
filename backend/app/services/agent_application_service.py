@@ -2,8 +2,10 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.agent_application import AgentApplication
+from app.models.gumba import Gumba
 from app.models.user import User
 from app.schemas.agent_application import AgentApplicationCreate
+from app.enums.agent_application import GumbaApplicationType
 
 
 class AgentApplicationService:
@@ -12,17 +14,42 @@ class AgentApplicationService:
     def create_application(
         db: Session,
         current_user: User,
-        application_data: AgentApplicationCreate
+        application_data: AgentApplicationCreate,
+        profile_photo: str | None = None,
+        id_document: str | None = None,
+        gumba_association_letter: str | None = None,
     ):
 
-        # User must currently be a normal USER
+        # ---------------------------------------------------------
+        # 1. ONLY NORMAL USERS CAN APPLY
+        # ---------------------------------------------------------
+
         if current_user.role.name != "USER":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Only users can apply to become an agent."
             )
 
-        # Check whether this user already has an application
+        # ---------------------------------------------------------
+        # 2. REQUIRED FILE REFERENCES
+        # ---------------------------------------------------------
+
+        if not id_document:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="ID document is required."
+            )
+
+        if not gumba_association_letter:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Gumba association letter is required."
+            )
+
+        # ---------------------------------------------------------
+        # 3. CHECK EXISTING APPLICATION
+        # ---------------------------------------------------------
+
         existing_application = (
             db.query(AgentApplication)
             .filter(
@@ -45,50 +72,209 @@ class AgentApplicationService:
                     detail="Your agent application has already been approved."
                 )
 
-            # REJECTED
-            # Allow the user to submit again.
-            db.delete(existing_application)
-            db.flush()
+            # -----------------------------------------------------
+            # REJECTED APPLICATION
+            # -----------------------------------------------------
+            #
+            # Reuse the existing application record instead of
+            # creating unlimited application records for one user.
+            #
 
-        # Make sure the identity information belongs to
-        # the currently logged-in user.
-        if application_data.email != current_user.email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email does not match the logged-in user."
+            application = existing_application
+
+        else:
+
+            application = AgentApplication(
+                user_id=current_user.id
             )
 
-        if application_data.phone != current_user.phone:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Phone number does not match the logged-in user."
+        # ---------------------------------------------------------
+        # 4. EXISTING GUMBA
+        # ---------------------------------------------------------
+
+        if (
+            application_data.gumba_application_type
+            == GumbaApplicationType.EXISTING
+        ):
+
+            if application_data.gumba_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Gumba ID is required when selecting an existing Gumba."
+                )
+
+            gumba = (
+                db.query(Gumba)
+                .filter(
+                    Gumba.id == application_data.gumba_id,
+                    Gumba.is_active == True
+                )
+                .first()
             )
 
-        if application_data.full_name.strip() != current_user.full_name.strip():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Full name does not match the logged-in user."
+            if gumba is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Selected Gumba was not found."
+                )
+
+            # -----------------------------------------------------
+            # IMPORTANT:
+            # Existing Gumba must not already have an agent.
+            # -----------------------------------------------------
+
+            if gumba.agent_id is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This Gumba is already assigned to an agent."
+                )
+
+            application.gumba_application_type = "EXISTING"
+            application.gumba_id = gumba.id
+
+            # Clear previously submitted NEW Gumba information.
+            application.new_gumba_name = None
+            application.new_gumba_description = None
+            application.new_gumba_address = None
+            application.new_gumba_district = None
+            application.new_gumba_municipality = None
+            application.new_gumba_ward_no = None
+            application.new_gumba_contact_phone = None
+            application.new_gumba_contact_email = None
+            application.new_gumba_website = None
+            application.new_gumba_latitude = None
+            application.new_gumba_longitude = None
+
+        # ---------------------------------------------------------
+        # 5. NEW GUMBA
+        # ---------------------------------------------------------
+
+        elif (
+            application_data.gumba_application_type
+            == GumbaApplicationType.NEW
+        ):
+
+            if application_data.gumba_id is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Existing Gumba ID must not be provided when registering a new Gumba."
+                )
+
+            # -----------------------------------------------------
+            # Check whether a similar Gumba already exists.
+            # -----------------------------------------------------
+
+            existing_gumba = (
+                db.query(Gumba)
+                .filter(
+                    Gumba.name == application_data.new_gumba_name,
+                    Gumba.district == application_data.new_gumba_district,
+                    Gumba.municipality
+                    == application_data.new_gumba_municipality,
+                    Gumba.ward_no
+                    == str(application_data.new_gumba_ward_no),
+                    Gumba.is_active == True
+                )
+                .first()
             )
 
-        application = AgentApplication(
-            user_id=current_user.id,
-            profile_photo=application_data.profile_photo,
-            gender=application_data.gender,
-            address=application_data.address,
-            district=application_data.district,
-            municipality=application_data.municipality,
-            ward_no=application_data.ward_no,
-            designation=application_data.designation,
-            short_bio=application_data.short_bio,
-            id_type=application_data.id_type,
-            id_number=application_data.id_number,
-            id_document=application_data.id_document,
-            gumba_association_letter=application_data.gumba_association_letter,
-            verification_status="PENDING"
+            if existing_gumba:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="This Gumba is already registered."
+                )
+
+            application.gumba_application_type = "NEW"
+            application.gumba_id = None
+
+            application.new_gumba_name = (
+                application_data.new_gumba_name
+            )
+
+            application.new_gumba_description = (
+                application_data.new_gumba_description
+            )
+
+            application.new_gumba_address = (
+                application_data.new_gumba_address
+            )
+
+            application.new_gumba_district = (
+                application_data.new_gumba_district
+            )
+
+            application.new_gumba_municipality = (
+                application_data.new_gumba_municipality
+            )
+
+            application.new_gumba_ward_no = (
+                str(application_data.new_gumba_ward_no)
+            )
+
+            application.new_gumba_contact_phone = (
+                application_data.new_gumba_contact_phone
+            )
+
+            application.new_gumba_contact_email = (
+                application_data.new_gumba_contact_email
+            )
+
+            application.new_gumba_website = (
+                application_data.new_gumba_website
+            )
+
+            application.new_gumba_latitude = (
+                application_data.new_gumba_latitude
+            )
+
+            application.new_gumba_longitude = (
+                application_data.new_gumba_longitude
+            )
+
+        # ---------------------------------------------------------
+        # 6. APPLICANT INFORMATION
+        # ---------------------------------------------------------
+
+        application.profile_photo = profile_photo
+
+        application.gender = application_data.gender
+
+        application.address = application_data.address
+        application.district = application_data.district
+        application.municipality = application_data.municipality
+        application.ward_no = str(application_data.ward_no)
+
+        application.designation = application_data.designation
+
+        application.short_bio = application_data.short_bio
+
+        # ---------------------------------------------------------
+        # 7. IDENTITY INFORMATION
+        # ---------------------------------------------------------
+
+        application.id_type = application_data.id_type
+        application.id_number = application_data.id_number
+
+        application.id_document = id_document
+
+        application.gumba_association_letter = (
+            gumba_association_letter
         )
 
+        # ---------------------------------------------------------
+        # 8. RESET STATUS
+        # ---------------------------------------------------------
+
+        application.verification_status = "PENDING"
+
+        # ---------------------------------------------------------
+        # 9. SAVE
+        # ---------------------------------------------------------
+
         db.add(application)
+
         db.commit()
+
         db.refresh(application)
 
         return application

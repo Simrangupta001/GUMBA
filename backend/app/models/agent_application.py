@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Float
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -20,8 +20,12 @@ class AgentApplication(Base, BaseModelMixin):
     gumba_id = Column(
         Integer,
         ForeignKey("gumbas.id"),
-        nullable=False,
+        nullable=True,
         index=True
+    )
+    gumba_application_type = Column(
+        String(20),
+        nullable=False
     )
 
     # Profile information
@@ -93,3 +97,29 @@ class AgentApplication(Base, BaseModelMixin):
         "User",
         back_populates="agent_application"
     )
+
+    gumba = relationship(
+        "Gumba",
+        back_populates="agent_applications"
+    )
+    new_gumba_name = Column(String(100), nullable=True)
+
+    new_gumba_description = Column(Text, nullable=True)
+
+    new_gumba_address = Column(String(255), nullable=True)
+
+    new_gumba_district = Column(String(100), nullable=True)
+
+    new_gumba_municipality = Column(String(100), nullable=True)
+
+    new_gumba_ward_no = Column(String(20), nullable=True)
+
+    new_gumba_contact_phone = Column(String(20), nullable=True)
+
+    new_gumba_contact_email = Column(String(255), nullable=True)
+
+    new_gumba_website = Column(String(255), nullable=True)
+
+    new_gumba_latitude = Column(Float, nullable=True)
+
+    new_gumba_longitude = Column(Float, nullable=True)

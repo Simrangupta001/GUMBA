@@ -16,12 +16,7 @@ class User(Base, BaseModelMixin):
     role = relationship("Role")
     gumbas = relationship("Gumba", back_populates="agent")
     donations = relationship("Donation", back_populates="user")
-    agent_application = relationship(
-        "AgentApplication",
-        back_populates="user",
-        uselist=False
-    )
-
+  
     agent_application = relationship(
         "AgentApplication",
         back_populates="user",

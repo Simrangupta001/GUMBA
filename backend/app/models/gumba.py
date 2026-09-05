@@ -52,20 +52,12 @@ class Gumba(Base, BaseModelMixin):
     )
     # app/models/gumba.py
     media = relationship("GumbaMedia", back_populates="gumba")  # add this line
-    gumba_id = Column(
-        Integer,
-        ForeignKey("gumbas.id"),
-        nullable=False,
-        index=True
+
+    agent_applications = relationship(
+        "AgentApplication",
+        back_populates="gumba"
     )
 
-    # gumba = relationship(
-    #     "Gumba",
-    #     back_populates="agent_applications"
-    # )
 
-    user = relationship(
-        "User",
-        back_populates="agent_application"
-    )
+
 
