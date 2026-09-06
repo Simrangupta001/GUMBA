@@ -31,5 +31,6 @@ typing-inspection==0.4.2
 typing_extensions==4.16.0
 uvicorn==0.51.0
 email-validator
+pypdf
 
 

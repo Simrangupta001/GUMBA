@@ -6,8 +6,7 @@ from fastapi import (
     File,
     Form,
     UploadFile,
-)
-
+  )
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -42,7 +41,7 @@ router = APIRouter(
 
 
 @router.post("")
-def create_agent_application(
+async def create_agent_application(
     # ---------------------------------------------------------
     # GUMBA APPLICATION
     # ---------------------------------------------------------
@@ -161,18 +160,30 @@ def create_agent_application(
     # SERVICE
     # ---------------------------------------------------------
     stored_profile_photo = None
+    stored_id_document = None
+    stored_association_letter = None
 
-    if profile_photo:
-        content, detected_type = await read_and_validate_file(
-            profile_photo,
-            IMAGE_MIME_TYPES,
-        )
+    try:
 
-        stored_profile_photo = save_file(
-            content=content,
-            directory=PROFILE_PHOTO_DIR,
-            extension=get_safe_extension(detected_type),
-        )
+        # -------------------------------------------------
+        # 3. Validate + save profile photo
+        # -------------------------------------------------
+
+        if profile_photo:
+            content, detected_type = await read_and_validate_file(
+                profile_photo,
+                IMAGE_MIME_TYPES,
+            )
+
+            stored_profile_photo = save_file(
+                content=content,
+                directory=PROFILE_PHOTO_DIR,
+                extension=get_safe_extension(detected_type),
+            )
+
+        # -------------------------------------------------
+        # 4. Validate + save ID document
+        # -------------------------------------------------
 
         content, detected_type = await read_and_validate_file(
             id_document,
@@ -185,6 +196,10 @@ def create_agent_application(
             extension=get_safe_extension(detected_type),
         )
 
+        # -------------------------------------------------
+        # 5. Validate + save Gumba association letter
+        # -------------------------------------------------
+
         content, detected_type = await read_and_validate_file(
             gumba_association_letter,
             DOCUMENT_MIME_TYPES,
@@ -195,9 +210,28 @@ def create_agent_application(
             directory=ASSOCIATION_LETTER_DIR,
             extension=get_safe_extension(detected_type),
         )
-        
-    return AgentApplicationService.create_application(
-        db=db,
-        current_user=current_user,
-        application_data=application_data,
-    )
+
+        # -------------------------------------------------
+        # 6. Save application in database
+        # -------------------------------------------------
+
+        return AgentApplicationService.create_application(
+            db=db,
+            current_user=current_user,
+            application_data=application_data,
+            profile_photo=stored_profile_photo,
+            id_document=stored_id_document,
+            gumba_association_letter=stored_association_letter,
+        )
+
+    except Exception:
+
+        # -------------------------------------------------
+        # 7. Cleanup files if anything fails
+        # -------------------------------------------------
+
+        delete_file(stored_profile_photo)
+        delete_file(stored_id_document)
+        delete_file(stored_association_letter)
+
+        raise

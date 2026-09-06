@@ -101,7 +101,7 @@ def validate_pdf(file_content: bytes) -> None:
 async def read_and_validate_file(
     file: UploadFile,
     allowed_mime_types: set[str],
-) -> bytes:
+) -> tuple[bytes, str]:
 
     if file is None:
         raise HTTPException(
@@ -152,7 +152,7 @@ async def read_and_validate_file(
 
         validate_pdf(content)
 
-    return content
+    return content, detected_type
 
 def get_safe_extension(mime_type: str) -> str:
 
