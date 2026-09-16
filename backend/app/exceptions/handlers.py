@@ -50,7 +50,10 @@ def pydantic_validation_exception_handler(
         content={
             "success": False,
             "message": "Validation failed.",
-            "errors": exc.errors(),
+            "errors": exc.errors(
+                include_context=False,
+                include_url=False,
+            ),
         },
     )
 
@@ -73,6 +76,8 @@ def sqlalchemy_error_handler(
     request: Request,
     exc: SQLAlchemyError,
 ):
+    import traceback
+    traceback.print_exception(type(exc), exc, exc.__traceback__)  # TEMP
     return JSONResponse(
         status_code=500,
         content={

@@ -12,7 +12,10 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import user_required
 from app.models.user import User
-from app.schemas.agent_application import AgentApplicationCreate
+from app.schemas.agent_application import (
+    AgentApplicationCreate,
+    AgentApplicationResponse,
+)
 from app.services.agent_application_service import (
     AgentApplicationService,
 )
@@ -40,7 +43,11 @@ router = APIRouter(
 )
 
 
-@router.post("")
+@router.post(
+    "",
+    response_model=AgentApplicationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_agent_application(
     # ---------------------------------------------------------
     # GUMBA APPLICATION

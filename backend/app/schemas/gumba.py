@@ -85,7 +85,16 @@ class GumbaCreate(BaseModel):
 
         return value
 
+class GumbaAgentResponse(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    phone: Optional[str]
 
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+    
 class GumbaResponse(BaseModel):
 
     id: int
@@ -110,13 +119,5 @@ class GumbaResponse(BaseModel):
         from_attributes=True
     )
 
-    class GumbaAgentResponse(BaseModel):
-        id: int
-        full_name: str
-        email: str
-        phone: Optional[str]
 
-        model_config = ConfigDict(
-            from_attributes=True
-        )
 

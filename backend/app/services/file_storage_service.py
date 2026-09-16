@@ -20,6 +20,14 @@ ASSOCIATION_LETTER_DIR = (
     AGENT_APPLICATION_ROOT / "association_letters"
 )
 
+USER_ACCOUNT_ROOT = (
+    UPLOAD_ROOT / "users"
+)
+
+USER_PROFILE_PHOTO_DIR = (
+    USER_ACCOUNT_ROOT / "profile_photos"
+)
+
 def initialize_storage() -> None:
 
     PROFILE_PHOTO_DIR.mkdir(
@@ -33,6 +41,11 @@ def initialize_storage() -> None:
     )
 
     ASSOCIATION_LETTER_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    USER_PROFILE_PHOTO_DIR.mkdir(
         parents=True,
         exist_ok=True
     )

@@ -24,6 +24,7 @@ from app.routes.super_admin import router as super_admin_router
 from app.middleware.logging import logging_middleware
 from app.routes.gumba import router as gumba_router
 from app.routes.agent_application import router as agent_application_router
+from app.routes.admin_agent_application import router as admin_agent_application_router
 from app.routes.donation import router as donation_router
 configure_mappers()
 
@@ -83,6 +84,7 @@ app.include_router(gumba_router)
 app.include_router(donation_router)
 
 app.include_router(agent_application_router)
+app.include_router(admin_agent_application_router)
 
 
 

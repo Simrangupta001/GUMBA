@@ -1,8 +1,12 @@
 from typing import Optional
-
+from datetime import datetime
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 
 from app.enums.agent_application import GumbaApplicationType
+from app.validators.agent_application import (
+    validate_gender,
+    validate_id_type,
+)
 
 
 class AgentApplicationCreate(BaseModel):
@@ -19,6 +23,15 @@ class AgentApplicationCreate(BaseModel):
         default=None,
         gt=0
     )
+    @field_validator("gender")
+    @classmethod
+    def validate_gender_field(cls, value):
+        return validate_gender(value)
+
+    @field_validator("id_type")
+    @classmethod
+    def validate_id_type_field(cls, value):
+        return validate_id_type(value)
 
     # ---------------------------------------------------------
     # NEW GUMBA INFORMATION
@@ -260,6 +273,82 @@ class AgentApplicationResponse(BaseModel):
     verification_status: str
 
     is_active: bool
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+# ---------------------------------------------------------
+# ADMIN REVIEW SCHEMAS
+# ---------------------------------------------------------
+
+class ApplicantSummaryResponse(BaseModel):
+
+    id: int
+    full_name: str
+    email: str
+    phone: Optional[str]
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+class LinkedGumbaSummaryResponse(BaseModel):
+
+    id: int
+    name: str
+    district: str
+    agent_id: Optional[int]
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+class AgentApplicationAdminResponse(BaseModel):
+
+    id: int
+    user_id: int
+    user: ApplicantSummaryResponse
+
+    gumba_application_type: str
+    gumba_id: Optional[int]
+    gumba: Optional[LinkedGumbaSummaryResponse]
+
+    new_gumba_name: Optional[str]
+    new_gumba_description: Optional[str]
+    new_gumba_address: Optional[str]
+    new_gumba_district: Optional[str]
+    new_gumba_municipality: Optional[str]
+    new_gumba_ward_no: Optional[str]
+    new_gumba_contact_phone: Optional[str]
+    new_gumba_contact_email: Optional[str]
+    new_gumba_website: Optional[str]
+    new_gumba_latitude: Optional[float]
+    new_gumba_longitude: Optional[float]
+
+    profile_photo: Optional[str]
+    gender: Optional[str]
+
+    address: str
+    district: str
+    municipality: str
+    ward_no: str
+
+    designation: str
+    short_bio: Optional[str]
+
+    id_type: str
+    id_number: str
+    id_document: str
+    gumba_association_letter: str
+
+    verification_status: str
+    is_active: bool
+
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(
         from_attributes=True
